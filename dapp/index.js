@@ -64,6 +64,7 @@ const ONE_GWEI = 1000000000n;
 const ETH_MAYBE_POOL_FEE = 100n;
 const ETH_MAYBE_TICK_SPACING = 60n;
 let appWideMaxGasPrice = DEFAULT_GAS_PRICE; // will be set when we retrieve fee data and this updated value should be used when sending a tx
+let appWideMaxPriorityFeePerGas = 0n;
 let appWideEstimatedVrfFee = 0n;
 
 // ---- DOM helpers ----
@@ -2888,6 +2889,7 @@ async function getQuote(fromAmountStr, fromSym, toSym) {
     };
     // set app wide maxGasPrice to be able to send txs with these gas configurations so that VRF fee uses that gas price for sure and not what metamask or some other wallet sets the fee for
     appWideMaxGasPrice = adjustedFeeData.maxFeePerGas;
+    appWideMaxPriorityFeePerGas = adjustedFeeData.maxPriorityFeePerGas;
     console.log("adjusted fee data: ", adjustedFeeData);
     console.log("max gas price: ", adjustedFeeData.maxFeePerGas);
     const estimatedVrfFee = estimatedVrfFeeResult.value;
@@ -3929,12 +3931,14 @@ async function executeSwap() {
             data: txData,
             value: (appWideEstimatedVrfFee * 12n) / 10n, // We are adding 20% buffer to VRF fee in case vrf fee changes. There is no downside as if we send excessive ETH, it will be sent back to the user
             maxFeePerGas: appWideMaxGasPrice,
+            maxPriorityFeePerGas: appWideMaxPriorityFeePerGas,
           })
         : signer.sendTransaction({
             to: MAYBE_ROUTER_ADDRESS,
             data: txData,
             value: fromData.address === tokens.ETH.address ? amountIn : 0n,
             maxFeePerGas: appWideMaxGasPrice,
+            maxPriorityFeePerGas: appWideMaxPriorityFeePerGas,
           }),
       "Confirm swap in your wallet",
     );
